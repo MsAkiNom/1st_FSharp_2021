@@ -380,11 +380,19 @@ let rec delete (ps: Path list) (e:Ecma) : Ecma =
 // 
 // The result list must respect the ordering requirements from Task 4.
 
-let withPath (ps: Path list) (e: Ecma): Ecma list =
-  let rec pathFind (p: Path) (e: Ecma): Ecma =
-    match p with
-    | [] -> e
-    | head::tail -> e
+let rec withPath (ps: Path list) (e: Ecma) : Ecma list =
 
-  ps |> List.fold(fun (ecmaList: Ecma list) p -> ecmaList @ [pathFind p e]
-  ) []
+  let headMatch (n: Name) (p: Path) : Path option =
+    if n = List.head p then Some (List.tail p) else None
+
+  let findTuple (ps: Path list) ((n, v): Name * Ecma) : Ecma list =
+    let m = List.choose (headMatch n) ps  
+    if List.isEmpty m then []  
+    else withPath m v  
+
+  let em, m = List.partition List.isEmpty ps
+  if List.isEmpty em then [] else [e]  
+  @ match e with
+    | Arr a -> List.collect (withPath m) a
+    | Obj ob -> List.collect (findTuple m) ob
+    | _ -> []
